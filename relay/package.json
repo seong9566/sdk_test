@@ -1,0 +1,13 @@
+{
+  "name": "pleos-location-relay",
+  "private": true,
+  "description": "PoC: 위치 공유 웹소켓 중계 서버와 가짜 상대 클라이언트",
+  "type": "module",
+  "scripts": {
+    "server": "node server.js",
+    "peer": "node fake-peer.js"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}

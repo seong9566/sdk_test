@@ -25,6 +25,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         resValue("string", "kakao_js_key", localProps.getProperty("KAKAO_JS_KEY", ""))
+        // 위치 공유 중계 서버. 기본값은 에뮬레이터에서 본 호스트 PC(10.0.2.2)의 로컬 서버(relay/server.js).
+        resValue("string", "relay_url", localProps.getProperty("RELAY_URL", "ws://10.0.2.2:8080"))
     }
 
     buildTypes {
@@ -47,6 +49,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+    implementation(libs.okhttp)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

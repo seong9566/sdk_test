@@ -18,6 +18,10 @@
 
         <activity
             android:name=".MapActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".PlaceholderActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

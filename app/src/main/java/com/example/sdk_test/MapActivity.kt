@@ -15,16 +15,21 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Pleos Connect 확인용 PoC.
  * WebView에 Kakao Maps JS API를 띄우고, AAOS 표준 LocationManager 좌표를 JS로 넘겨 마커를 갱신한다.
+ * 내 위치는 웹소켓 중계 서버로도 보내고, 다른 참가자의 위치를 받아 상대 마커로 그린다.
  */
 class MapActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var locationManager: LocationManager
     private var pageLoaded = false
+    private val myId = "car-" + UUID.randomUUID().toString().take(6)
+    private lateinit var relay: LocationRelay
 
     private val locationListener = LocationListener { location -> pushLocation(location) }
 
@@ -32,6 +37,13 @@ class MapActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         locationManager = getSystemService(LocationManager::class.java)
+        relay = LocationRelay(
+            url = getString(R.string.relay_url),
+            myId = myId,
+            onPeerLocation = { id, lat, lng -> runJs("updatePeer(${JSONObject.quote(id)}, $lat, $lng)") },
+            onPeerLeft = { id -> runJs("removePeer(${JSONObject.quote(id)})") },
+            onStatus = { text -> runJs("setRelayStatus(${JSONObject.quote("$myId · $text")})") },
+        )
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
@@ -39,6 +51,7 @@ class MapActivity : AppCompatActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView, url: String?) {
                     pageLoaded = true
+                    relay.connect()
                     if (hasLocationPermission()) startLocationUpdates()
                 }
             }
@@ -96,6 +109,11 @@ class MapActivity : AppCompatActivity() {
             "updateLocation(${location.latitude}, ${location.longitude}, ${location.accuracy}, '${location.provider}')",
             null
         )
+        relay.sendLocation(location.latitude, location.longitude)
+    }
+
+    private fun runJs(script: String) {
+        if (pageLoaded) webView.evaluateJavascript(script, null)
     }
 
     private fun hasLocationPermission() =
@@ -104,6 +122,7 @@ class MapActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         locationManager.removeUpdates(locationListener)
+        relay.close()
         webView.destroy()
         super.onDestroy()
     }
